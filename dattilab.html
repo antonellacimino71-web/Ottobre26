@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DattiLab — Laboratorio di Digitazione per la Scuola Media</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter e JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Stili personalizzati per il cursore lampeggiante e stampa */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .cursor-caret {
+            animation: blink 1s infinite;
+        }
+        
+        /* Stili per la tastiera virtuale */
+        .key-cap {
+            transition: all 0.08s ease;
+            box-shadow: 0 3px 0 #cbd5e1;
+        }
+        .key-cap:active, .key-pressed {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #cbd5e1;
+        }
+        .key-target {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.45), 0 3px 0 #3730a3 !important;
+            border-color: #4f46e5 !important;
+            background-color: #4f46e5 !important;
+            color: #ffffff !important;
+            font-weight: 700;
+        }
+        .key-error-flash {
+            background-color: #ef4444 !important;
+            color: white !important;
+            border-color: #b91c1c !important;
+        }
+
+        /* Ottimizzazione per Stampa / Salva PDF */
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            #view-report { display: block !important; padding: 0 !important; }
+            .print-shadow-none { box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+            table { font-size: 11px !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col selection:bg-indigo-100 selection:text-indigo-800">
+
+    <!-- NAVBAR SUPERIORE -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <!-- Logo e Titolo -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('setup')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="6" width="20" height="12" rx="2" />
+                        <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 leading-none">
+                        Datti<span class="text-indigo-600">Lab</span>
+                    </h1>
+                    <p class="text-[11px] font-medium text-slate-500 hidden sm:block">Alfabetizzazione Digitale • Scuola Secondaria di I Grado</p>
+                </div>
+            </div>
+
+            <!-- Navigazione tra Esercizio e Area Docente -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div id="header-student-badge" class="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span id="badge-student-name">Studente</span>
+                </div>
+
+                <button onclick="switchView('setup')" id="nav-btn-practice" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 bg-indigo-50 text-indigo-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Esercizio</span>
+                </button>
+
+                <button onclick="switchView('report')" id="nav-btn-report" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 text-slate-600 hover:bg-slate-100 relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Report Docente</span>
+                    <span id="report-count-badge" class="ml-0.5 bg-indigo-600 text-white text-[11px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENITORE PRINCIPALE -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+        <!-- MESSAGGIO NOTIFICA / TOAST PERSONALIZZATO (No alert()) -->
+        <div id="toast-box" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+            <div id="toast-content" class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 text-sm font-medium">
+                <span id="toast-icon">ℹ️</span>
+                <span id="toast-message">Messaggio</span>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             SEZIONE 1: CONFIGURAZIONE STUDENTE, LIVELLO E TIMER
+             ===================================================================== -->
+        <section id="view-setup" class="space-y-6">
+            <!-- Hero Banner Compatto -->
+            <div class="bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 rounded-2xl p-6 sm:p-8 text-white shadow-lg shadow-indigo-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div class="space-y-2 max-w-2xl">
+                    <span class="inline-block px-3 py-1 rounded-full bg-white/15 text-indigo-100 text-xs font-semibold tracking-wide uppercase">
+                        Laboratorio di Informatica • 2ª Media
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                        Impara a scrivere veloce e senza guardare la tastiera!
+                    </h2>
+                    <p class="text-indigo-100 text-sm sm:text-base leading-relaxed">
+                        Inserisci i tuoi dati, scegli il livello adatto alla tua esperienza e imposta il timer. Al termine il tuo risultato verrà salvato nel registro del docente.
+                    </p>
+                </div>
+                <div class="hidden lg:flex items-center justify-center bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 shrink-0">
+                    <div class="text-center">
+                        <div class="text-3xl font-black">10 Dita</div>
+                        <div class="text-xs text-indigo-200 mt-1">Postura • Precisione • Ritmo</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Colonna Sinistra: Dati Studente + Timer -->
+                <div class="lg:col-span-5 space-y-6">
+                    <!-- Card Dati Studente -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <div class="flex items-center gap-2.5 mb-4">
+                            <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm flex items-center justify-center">1</span>
+                            <h3 class="font-bold text-lg text-slate-900">Chi sta svolgendo l'esercizio?</h3>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label for="student-name" class="block text-sm font-semibold text-slate-700 mb-1">
+                                    Nome e Cognome <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" id="student-name" placeholder="Es. Giulia Bianchi" 
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition text-slate-900 font-medium"
+                                    oninput="updateStudentState()">
+                                <p id="name-error-msg" class="text-rose-600 text-xs font-medium mt-1 hidden">
+                                    Inserisci il tuo Nome e Cognome prima di iniziare.
+                                </p>
+                            </div>
+
+                            <div>
+                                <label for="student-class" class="block text-sm font-semibold text-slate-700 mb-1">
+                                    Classe / Sezione
+                                </label>
+                                <div class="grid grid-cols-4 gap-2 mb-2">
+                                    <button type="button" onclick="selectQuickClass('2A')" class="quick-class-btn py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:border-indigo-400 hover:bg-indigo-50 transition">2A</button>
+                                    <button type="button" onclick="selectQuickClass('2B')" class="quick-class-btn py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:border-indigo-400 hover:bg-indigo-50 transition">2B</button>
+                                    <button type="button" onclick="selectQuickClass('2C')" class="quick-class-btn py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:border-indigo-400 hover:bg-indigo-50 transition">2C</button>
+                                    <button type="button" onclick="selectQuickClass('2D')" class="quick-class-btn py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:border-indigo-400 hover:bg-indigo-50 transition">2D</button>
+                                </div>
+                                <input type="text" id="student-class" placeholder="Oppure scrivi la classe (es. 2E)" 
+                                    class="w-full px-4 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition text-sm text-slate-900"
+                                    oninput="updateStudentState()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Timer -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <div class="flex items-center gap-2.5 mb-4">
+                            <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm flex items-center justify-center">3</span>
+                            <h3 class="font-bold text-lg text-slate-900">Scegli il Timer</h3>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="timer-options">
+                            <button type="button" data-time="30" onclick="selectTimer(30)" class="timer-btn p-3 rounded-xl border-2 border-slate-200 text-left hover:border-indigo-300 transition">
+                                <div class="font-bold text-slate-900 text-sm">30 Sec</div>
+                                <div class="text-[11px] text-slate-500">Sprint rapido</div>
+                            </button>
+                            <button type="button" data-time="60" onclick="selectTimer(60)" class="timer-btn p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50/70 text-left transition">
+                                <div class="font-bold text-indigo-900 text-sm">1 Minuto</div>
+                                <div class="text-[11px] text-indigo-600 font-medium">Consigliato</div>
+                            </button>
+                            <button type="button" data-time="120" onclick="selectTimer(120)" class="timer-btn p-3 rounded-xl border-2 border-slate-200 text-left hover:border-indigo-300 transition">
+                                <div class="font-bold text-slate-900 text-sm">2 Minuti</div>
+                                <div class="text-[11px] text-slate-500">Resistenza</div>
+                            </button>
+                            <button type="button" data-time="180" onclick="selectTimer(180)" class="timer-btn p-3 rounded-xl border-2 border-slate-200 text-left hover:border-indigo-300 transition">
+                                <div class="font-bold text-slate-900 text-sm">3 Minuti</div>
+                                <div class="text-[11px] text-slate-500">Sfida lunga</div>
+                            </button>
+                            <button type="button" data-time="0" onclick="selectTimer(0)" class="timer-btn col-span-2 p-3 rounded-xl border-2 border-slate-200 text-left hover:border-emerald-400 transition">
+                                <div class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                                    <span>∞ Senza Tempo</span>
+                                </div>
+                                <div class="text-[11px] text-slate-500">Allenamento libero senza fretta (ideale per iniziare)</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colonna Destra: Selezione Livello Graduale -->
+                <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-sm flex items-center justify-center">2</span>
+                                <h3 class="font-bold text-lg text-slate-900">Scegli il Livello di Difficoltà</h3>
+                            </div>
+                            <span class="text-xs font-medium text-slate-500">Percorso graduale</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5" id="level-options">
+                            <!-- Livello 1 -->
+                            <div onclick="selectLevel(1)" data-level="1" class="level-card cursor-pointer rounded-2xl p-4 border-2 border-indigo-600 bg-indigo-50/50 transition relative">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Livello 1 • Principiante</span>
+                                    <span class="level-check text-indigo-600 font-bold">✓</span>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-base">Primi Passi (Riga Base)</h4>
+                                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                    Impara la posizione base delle dita sulle lettere centrali (<code class="bg-white px-1 rounded border text-indigo-700">asdf jklò</code>) e prime parole semplici.
+                                </p>
+                            </div>
+
+                            <!-- Livello 2 -->
+                            <div onclick="selectLevel(2)" data-level="2" class="level-card cursor-pointer rounded-2xl p-4 border-2 border-slate-200 hover:border-indigo-300 transition relative">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-800">Livello 2 • Base</span>
+                                    <span class="level-check text-indigo-600 font-bold hidden">✓</span>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-base">Parole Quotidiane</h4>
+                                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                    Parole italiane comuni tutte minuscole e senza accenti complessi, per prendere ritmo su tutta la tastiera.
+                                </p>
+                            </div>
+
+                            <!-- Livello 3 -->
+                            <div onclick="selectLevel(3)" data-level="3" class="level-card cursor-pointer rounded-2xl p-4 border-2 border-slate-200 hover:border-indigo-300 transition relative">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">Livello 3 • Intermedio</span>
+                                    <span class="level-check text-indigo-600 font-bold hidden">✓</span>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-base">Frasi e Punteggiatura</h4>
+                                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                    Frasi complete con lettere maiuscole (tasto Maiusc/Shift), virgole, punti e vocali accentate (<code class="bg-slate-100 px-1 rounded">è, é, à, ò, ù, ì</code>).
+                                </p>
+                            </div>
+
+                            <!-- Livello 4 -->
+                            <div onclick="selectLevel(4)" data-level="4" class="level-card cursor-pointer rounded-2xl p-4 border-2 border-slate-200 hover:border-indigo-300 transition relative">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800">Livello 4 • Esperto</span>
+                                    <span class="level-check text-indigo-600 font-bold hidden">✓</span>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-base">Sfida Pro (Testo Completo)</h4>
+                                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                    Brani sul mondo digitale, cittadinanza attiva e tecnologia con numeri, apostrofi e punteggiatura avanzata.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suggerimento Postura + Pulsante Avvia -->
+                    <div class="mt-6 pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center gap-3 text-xs text-slate-600 bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-200/80">
+                            <span class="text-lg">🖐️</span>
+                            <span><strong>Trucco:</strong> Appoggia gli indici sui tasti <strong>F</strong> e <strong>J</strong> (hanno un piccolo trattino in rilievo!).</span>
+                        </div>
+
+                        <button onclick="startExercise()" class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2 shrink-0">
+                            <span>Inizia Esercizio</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             SEZIONE 2: AREA DI DIGITAZIONE INTERATTIVA + TASTIERA VIRTUALE
+             ===================================================================== -->
+        <section id="view-practice" class="hidden space-y-5">
+            <!-- Barra Statistiche in Tempo Reale -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <button onclick="abortExercise()" class="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition" title="Torna alla selezione">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <div class="text-xs font-semibold text-indigo-600" id="practice-level-label">Livello 1 • Primi Passi</div>
+                        <div class="text-sm font-bold text-slate-800" id="practice-student-label">Studente</div>
+                    </div>
+                </div>
+
+                <!-- Indicatori Numerici Live -->
+                <div class="flex items-center gap-3 sm:gap-6">
+                    <!-- Timer -->
+                    <div class="bg-slate-900 text-white px-4 py-2 rounded-xl flex items-center gap-2.5 min-w-[110px] justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span id="live-timer" class="font-mono font-bold text-lg tracking-wider">01:00</span>
+                    </div>
+
+                    <!-- WPM -->
+                    <div class="text-center px-2">
+                        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Velocità</div>
+                        <div class="font-mono font-extrabold text-lg sm:text-xl text-slate-800">
+                            <span id="live-wpm">0</span> <span class="text-xs font-sans font-medium text-slate-500">WPM</span>
+                        </div>
+                    </div>
+
+                    <!-- Precisione -->
+                    <div class="text-center px-2">
+                        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Precisione</div>
+                        <div class="font-mono font-extrabold text-lg sm:text-xl text-emerald-600">
+                            <span id="live-accuracy">100</span><span class="text-sm">%</span>
+                        </div>
+                    </div>
+
+                    <!-- Errori -->
+                    <div class="text-center px-2 hidden sm:block">
+                        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Errori</div>
+                        <div class="font-mono font-extrabold text-lg sm:text-xl text-rose-600" id="live-errors">0</div>
+                    </div>
+                </div>
+
+                <!-- Azioni Rapide -->
+                <div class="flex items-center gap-2">
+                    <button onclick="restartCurrentExercise()" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition" title="Ricomincia questo livello">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span class="hidden md:inline">Ricomincia</span>
+                    </button>
+                    <button onclick="finishExercise(true)" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition">
+                        Concludi Ora
+                    </button>
+                </div>
+            </div>
+
+            <!-- Barra di Avanzamento -->
+            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div id="progress-bar" class="bg-indigo-600 h-full transition-all duration-150" style="width: 0%"></div>
+            </div>
+
+            <!-- AREA DI TESTO DA DIGITARE -->
+            <div id="typing-container" onclick="focusHiddenInput()" class="bg-white rounded-2xl p-6 sm:p-8 border-2 border-indigo-200 shadow-sm cursor-text relative transition focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-100">
+                <!-- Banner Avviso "Inizia a digitare" -->
+                <div id="start-prompt-banner" class="mb-4 flex items-center justify-between bg-indigo-50 text-indigo-800 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-ping"></span>
+                        Il timer partirà automaticamente appena digiti il <strong>primo carattere</strong>!
+                    </span>
+                    <span class="text-indigo-500 hidden sm:inline">Clicca qui se perdi il focus</span>
+                </div>
+
+                <!-- Input invisibile che cattura la tastiera fisica (e mobile) -->
+                <input type="text" id="hidden-typing-input" class="opacity-0 absolute inset-0 w-full h-full cursor-text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+                <!-- Testo Renderizzato Carattere per Carattere -->
+                <div id="target-text-display" class="font-mono text-xl sm:text-2xl md:text-[26px] leading-relaxed tracking-wide select-none break-words min-h-[120px]">
+                    <!-- Generato via JS -->
+                </div>
+            </div>
+
+            <!-- TASTIERA VIRTUALE ITALIANA (QWERTY) -->
+            <div class="bg-slate-200/80 rounded-2xl p-3 sm:p-5 border border-slate-300/80 shadow-inner select-none">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Tastiera Italiana QWERTY</span>
+                        <span id="next-key-hint" class="px-2.5 py-0.5 rounded-md bg-indigo-600 text-white text-xs font-mono font-bold">
+                            Prossimo tasto: —
+                        </span>
+                    </div>
+
+                    <!-- Toggle Colori Dita -->
+                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                        <input type="checkbox" id="toggle-finger-colors" checked onchange="renderKeyboard()" class="rounded text-indigo-600 focus:ring-indigo-500">
+                        <span>Mostra guida colori dita</span>
+                    </label>
+                </div>
+
+                <!-- Legenda Dita (Visibile se attiva) -->
+                <div id="finger-legend" class="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-3 text-[11px] font-medium text-slate-700 bg-white/70 py-1.5 px-3 rounded-xl">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-rose-200 border border-rose-400"></span>Mignolo</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-amber-200 border border-amber-400"></span>Anulare</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-emerald-200 border border-emerald-400"></span>Medio</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-sky-200 border border-sky-400"></span>Indice</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-violet-200 border border-violet-400"></span>Pollice (Spazio)</span>
+                </div>
+
+                <!-- Griglia Tasti -->
+                <div id="virtual-keyboard" class="space-y-1.5 max-w-4xl mx-auto overflow-x-auto pb-1">
+                    <!-- Generata dinamicamente da JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             SEZIONE 3: SCHERMATA RISULTATI STUDENTE (FINE ESERCIZIO)
+             ===================================================================== -->
+        <section id="view-results" class="hidden max-w-3xl mx-auto space-y-6">
+            <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-lg text-center space-y-6">
+                <!-- Badge Livello Raggiunto -->
+                <div class="inline-flex flex-col items-center">
+                    <div id="result-stars" class="text-4xl mb-2 tracking-widest">⭐⭐⭐</div>
+                    <span id="result-badge-rank" class="px-4 py-1 rounded-full bg-indigo-100 text-indigo-800 font-bold text-sm">
+                        Ottimo Lavoro!
+                    </span>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900" id="result-student-title">
+                        Complimenti, Giulia!
+                    </h2>
+                    <p class="text-slate-600 mt-1.5 text-sm sm:text-base max-w-xl mx-auto" id="result-feedback-text">
+                        Hai completato l'esercizio con un'ottima precisione. Il tuo risultato è stato registrato nel Report del Docente.
+                    </p>
+                </div>
+
+                <!-- Griglia Metriche Principali -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-2">
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Velocità</div>
+                        <div class="text-2xl sm:text-3xl font-black text-indigo-600 mt-1" id="res-wpm">0</div>
+                        <div class="text-[11px] text-slate-400">Parole/min (WPM)</div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Battute</div>
+                        <div class="text-2xl sm:text-3xl font-black text-slate-800 mt-1" id="res-cpm">0</div>
+                        <div class="text-[11px] text-slate-400">Caratteri/min (CPM)</div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Precisione</div>
+                        <div class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1" id="res-accuracy">100%</div>
+                        <div class="text-[11px] text-slate-400">Tasti corretti</div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Errori</div>
+                        <div class="text-2xl sm:text-3xl font-black text-rose-600 mt-1" id="res-errors">0</div>
+                        <div class="text-[11px] text-slate-400">Su <span id="res-total-chars">0</span> battute</div>
+                    </div>
+                </div>
+
+                <!-- Analisi Tasti da Migliorare -->
+                <div id="res-missed-keys-box" class="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 text-left hidden">
+                    <div class="text-xs font-bold uppercase text-amber-800 mb-1.5">💡 Tasti su cui esercitarti di più:</div>
+                    <div id="res-missed-keys-list" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Pulsanti Azione -->
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+                    <button onclick="restartCurrentExercise()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition">
+                        🔄 Ripeti lo stesso livello
+                    </button>
+                    <button onclick="switchView('setup')" class="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold text-sm transition">
+                        🎯 Cambia livello o studente
+                    </button>
+                    <button onclick="switchView('report')" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm transition">
+                        📊 Vai al Report Docente
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             SEZIONE 4: REPORT DOCENTE / REGISTRO DI CLASSE
+             ===================================================================== -->
+        <section id="view-report" class="hidden space-y-6">
+            <!-- Intestazione Report -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm print-shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-xs font-bold uppercase">Area Docente</span>
+                        <span class="text-xs text-slate-400" id="report-date-label">Anno Scolastico</span>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 mt-1">Report Risultati — Alfabetizzazione Digitale</h2>
+                    <p class="text-sm text-slate-500">Monitoraggio velocità (WPM/CPM), precisione e progressi degli studenti.</p>
+                </div>
+
+                <!-- Pulsanti Esportazione e Gestione -->
+                <div class="flex flex-wrap items-center gap-2.5 no-print">
+                    <button onclick="exportReportCSV()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm transition flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>Esporta Excel (CSV)</span>
+                    </button>
+
+                    <button onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-sm transition flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        <span>Stampa / Salva PDF</span>
+                    </button>
+
+                    <button onclick="openClearConfirmModal()" class="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-bold transition">
+                        Svuota Registro
+                    </button>
+                </div>
+            </div>
+
+            <!-- Riepilogo Statistiche Medie della Classe -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm print-shadow-none">
+                    <div class="text-xs font-semibold text-slate-400 uppercase">Prove Svolte</div>
+                    <div class="text-2xl font-black text-slate-900 mt-1" id="stat-total-tests">0</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm print-shadow-none">
+                    <div class="text-xs font-semibold text-slate-400 uppercase">Media Velocità Classe</div>
+                    <div class="text-2xl font-black text-indigo-600 mt-1"><span id="stat-avg-wpm">0</span> <span class="text-sm font-semibold text-slate-400">WPM</span></div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm print-shadow-none">
+                    <div class="text-xs font-semibold text-slate-400 uppercase">Media Precisione</div>
+                    <div class="text-2xl font-black text-emerald-600 mt-1"><span id="stat-avg-acc">0</span>%</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm print-shadow-none">
+                    <div class="text-xs font-semibold text-slate-400 uppercase">Tasti Più Critici</div>
+                    <div class="text-sm font-bold text-amber-700 mt-2 font-mono" id="stat-hardest-keys">Nessun dato</div>
+                </div>
+            </div>
+
+            <!-- Filtro per Classe -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm print-shadow-none overflow-hidden">
+                <div class="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 no-print">
+                    <div class="flex items-center gap-2">
+                        <label for="filter-class-select" class="text-xs font-bold text-slate-600 uppercase">Filtra per Classe:</label>
+                        <select id="filter-class-select" onchange="renderReportTable()" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500">
+                            <option value="ALL">Tutte le classi</option>
+                        </select>
+                    </div>
+                    <div class="text-xs text-slate-500">
+                        I dati sono salvati localmente su questo dispositivo.
+                    </div>
+                </div>
+
+                <!-- Tabella Risultati -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                <th class="py-3.5 px-4">Studente</th>
+                                <th class="py-3.5 px-3">Classe</th>
+                                <th class="py-3.5 px-3">Livello</th>
+                                <th class="py-3.5 px-3">Timer</th>
+                                <th class="py-3.5 px-3 text-right">WPM</th>
+                                <th class="py-3.5 px-3 text-right">CPM</th>
+                                <th class="py-3.5 px-3 text-right">Precisione</th>
+                                <th class="py-3.5 px-3 text-center">Errori</th>
+                                <th class="py-3.5 px-3">Tasti Errati</th>
+                                <th class="py-3.5 px-4">Valutazione</th>
+                                <th class="py-3.5 px-3 no-print text-center">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-table-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Righe generate via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Stato Vuoto -->
+                <div id="report-empty-state" class="p-12 text-center hidden">
+                    <div class="text-4xl mb-2">📋</div>
+                    <h4 class="font-bold text-slate-800 text-base">Nessun esercizio registrato</h4>
+                    <p class="text-slate-500 text-sm mt-1">Quando gli studenti completeranno un esercizio, i loro punteggi appariranno qui automaticamente.</p>
+                    <button onclick="switchView('setup')" class="mt-4 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">
+                        Vai all'Esercizio
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODALE PERSONALIZZATA PER CONFERMA SVUOTA REGISTRO (Sostituisce confirm()) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center gap-3 text-rose-600">
+                <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="font-bold text-lg text-slate-900">Svuotare tutto il registro?</h3>
+            </div>
+            <p class="text-sm text-slate-600">
+                Questa azione cancellerà definitivamente tutti i risultati degli studenti salvati su questo computer. Ti consigliamo di esportare prima il file Excel (CSV).
+            </p>
+            <div class="flex items-center justify-end gap-2.5 pt-2">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">
+                    Annulla
+                </button>
+                <button onclick="confirmClearAllReports()" class="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700">
+                    Sì, cancella tutto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 no-print">
+        DattiLab • Strumento didattico per l'alfabetizzazione digitale e l'uso consapevole della tastiera nella Scuola Secondaria di I Grado.
+    </footer>
+
+    <!-- =========================================================================
+         LOGICA JAVASCRIPT DELL'APPLICAZIONE
+         ========================================================================= -->
+    <script>
+        // -------------------------------------------------------------------------
+        // 1. BANCA TESTI GRADUALI PER I 4 LIVELLI (LINGUA ITALIANA)
+        // -------------------------------------------------------------------------
+        const EXERCISE_TEXTS = {
+            1: [
+                "asdf jklò asdf jklò fjdk slaò fjdk slaò alla sala fada laka salsa falda",
+                "ff jj dd kk ss ll aa òò fj dk sl aò alla scala calda la fada salda",
+                "fjdk slaò asdf jklò la sala della fada calda assaggia la salsa salata",
+                "asdfg hjklò asdfg hjklò gaha faja kala sala dalla falda alla scala"
+            ],
+            2: [
+                "scuola libro quaderno zaino penna matita gomma banco lavagna classe compagni",
+                "tastiera schermo mouse computer cartella file immagine musica video progetto",
+                "oggi andiamo in laboratorio di informatica per imparare a scrivere veloce",
+                "leggere scrivere studiare giocare imparare insieme rende ogni giorno migliore"
+            ],
+            3: [
+                "Ciao! Oggi a scuola abbiamo iniziato il corso di alfabetizzazione digitale.",
+                "Per scrivere bene, è importante mantenere la schiena dritta e non guardare i tasti.",
+                "L'uso corretto della tastiera aiuta a risparmiare tempo durante le ricerche scolastiche.",
+                "Ricorda di inserire gli accenti giusti: perché, così, più, città, università e però!"
+            ],
+            4: [
+                "Nel 2026 la competenza digitale è fondamentale: saper digitare con 10 dita migliora la concentrazione, riduce gli errori e permette di trasformare le idee in testo con naturalezza.",
+                "La cittadinanza digitale inizia dai piccoli gesti: scegliere password sicure (con almeno 12 caratteri, numeri e simboli!), verificare le fonti online e rispettare gli altri.",
+                "Un buon dattilografo non punta subito alla massima velocità, ma alla precisione: quando le dita memorizzano la posizione dei tasti, il ritmo cresce automaticamente giorno dopo giorno."
+            ]
+        };
+
+        const LEVEL_NAMES = {
+            1: "Liv. 1 — Primi Passi",
+            2: "Liv. 2 — Parole Quotidiane",
+            3: "Liv. 3 — Frasi e Punteggiatura",
+            4: "Liv. 4 — Sfida Pro"
+        };
+
+        // -------------------------------------------------------------------------
+        // 2. LAYOUT TASTIERA ITALIANA (QWERTY) CON ASSOCIAZIONE DITA
+        // -------------------------------------------------------------------------
+        // Dita: 'pinky' (mignolo), 'ring' (anulare), 'middle' (medio), 'index' (indice), 'thumb' (pollice)
+        const ITALIAN_KEYBOARD_ROWS = [
+            [
+                { key: '\\', shift: '|', finger: 'pinky' },
+                { key: '1', shift: '!', finger: 'pinky' },
+                { key: '2', shift: '"', finger: 'ring' },
+                { key: '3', shift: '£', finger: 'middle' },
+                { key: '4', shift: '$', finger: 'index' },
+                { key: '5', shift: '%', finger: 'index' },
+                { key: '6', shift: '&', finger: 'index' },
+                { key: '7', shift: '/', finger: 'index' },
+                { key: '8', shift: '(', finger: 'middle' },
+                { key: '9', shift: ')', finger: 'ring' },
+                { key: '0', shift: '=', finger: 'pinky' },
+                { key: '\'', shift: '?', finger: 'pinky' },
+                { key: 'ì', shift: '^', finger: 'pinky' },
+                { key: 'Backspace', label: '⌫', width: 'w-14', finger: 'pinky' }
+            ],
+            [
+                { key: 'Tab', label: 'Tab', width: 'w-12', finger: 'pinky' },
+                { key: 'q', shift: 'Q', finger: 'pinky' },
+                { key: 'w', shift: 'W', finger: 'ring' },
+                { key: 'e', shift: 'E', finger: 'middle' },
+                { key: 'r', shift: 'R', finger: 'index' },
+                { key: 't', shift: 'T', finger: 'index' },
+                { key: 'y', shift: 'Y', finger: 'index' },
+                { key: 'u', shift: 'U', finger: 'index' },
+                { key: 'i', shift: 'I', finger: 'middle' },
+                { key: 'o', shift: 'O', finger: 'ring' },
+                { key: 'p', shift: 'P', finger: 'pinky' },
+                { key: 'è', shift: 'é', finger: 'pinky' },
+                { key: '+', shift: '*', finger: 'pinky' }
+            ],
+            [
+                { key: 'CapsLock', label: 'Bloc', width: 'w-14', finger: 'pinky' },
+                { key: 'a', shift: 'A', finger: 'pinky' },
+                { key: 's', shift: 'S', finger: 'ring' },
+                { key: 'd', shift: 'D', finger: 'middle' },
+                { key: 'f', shift: 'F', finger: 'index', home: true },
+                { key: 'g', shift: 'G', finger: 'index' },
+                { key: 'h', shift: 'H', finger: 'index' },
+                { key: 'j', shift: 'J', finger: 'index', home: true },
+                { key: 'k', shift: 'K', finger: 'middle' },
+                { key: 'l', shift: 'L', finger: 'ring' },
+                { key: 'ò', shift: 'ç', finger: 'pinky' },
+                { key: 'à', shift: '°', finger: 'pinky' },
+                { key: 'ù', shift: '§', finger: 'pinky' },
+                { key: 'Enter', label: 'Invio', width: 'w-14', finger: 'pinky' }
+            ],
+            [
+                { key: 'ShiftLeft', label: '⇧ Maiusc', width: 'w-20', finger: 'pinky' },
+                { key: '<', shift: '>', finger: 'pinky' },
+                { key: 'z', shift: 'Z', finger: 'pinky' },
+                { key: 'x', shift: 'X', finger: 'ring' },
+                { key: 'c', shift: 'C', finger: 'middle' },
+                { key: 'v', shift: 'V', finger: 'index' },
+                { key: 'b', shift: 'B', finger: 'index' },
+                { key: 'n', shift: 'N', finger: 'index' },
+                { key: 'm', shift: 'M', finger: 'index' },
+                { key: ',', shift: ';', finger: 'middle' },
+                { key: '.', shift: ':', finger: 'ring' },
+                { key: '-', shift: '_', finger: 'pinky' },
+                { key: 'ShiftRight', label: '⇧ Maiusc', width: 'w-20', finger: 'pinky' }
+            ],
+            [
+                { key: ' ', label: 'BARRA SPAZIATRICE', width: 'w-72 sm:w-96', finger: 'thumb' }
+            ]
+        ];
+
+        const FINGER_BG_CLASSES = {
+            pinky: 'bg-rose-50 border-rose-300 text-rose-950',
+            ring: 'bg-amber-50 border-amber-300 text-amber-950',
+            middle: 'bg-emerald-50 border-emerald-300 text-emerald-950',
+            index: 'bg-sky-50 border-sky-300 text-sky-950',
+            thumb: 'bg-violet-50 border-violet-300 text-violet-950'
+        };
+
+        // -------------------------------------------------------------------------
+        // 3. STATO GLOBALE DELL'APPLICAZIONE
+        // -------------------------------------------------------------------------
+        const STORAGE_KEY = 'dattilab_teacher_reports_v1';
+
+        let appState = {
+            studentName: '',
+            studentClass: '',
+            selectedLevel: 1,
+            selectedDuration: 60, // secondi (0 = senza tempo)
+            
+            // Stato sessione attiva
+            isRunning: false,
+            hasStartedTyping: false,
+            targetText: '',
+            charStates: [], // 'pending', 'correct', 'incorrect'
+            currentIndex: 0,
+            totalKeystrokes: 0,
+            errorCount: 0,
+            missedKeysMap: {}, // { 'è': 3, 'k': 1 }
+            startTime: null,
+            timeRemaining: 60,
+            elapsedSeconds: 0,
+            timerInterval: null
+        };
+
+        // -------------------------------------------------------------------------
+        // 4. INIZIALIZZAZIONE E NAVIGAZIONE
+        // -------------------------------------------------------------------------
+        window.onload = function() {
+            // Imposta data odierna nel report
+            const today = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+            document.getElementById('report-date-label').textContent = `Data: ${today}`;
+
+            // Renderizza tastiera iniziale e aggiorna badge report
+            renderKeyboard();
+            updateReportBadgeCount();
+            renderReportTable();
+
+            // Listener per l'input nascosto durante la digitazione
+            const hiddenInput = document.getElementById('hidden-typing-input');
+            hiddenInput.addEventListener('input', handleTypingInput);
+            hiddenInput.addEventListener('keydown', handleSpecialKeys);
+        };
+
+        function switchView(viewName) {
+            // Se si esce dall'esercizio mentre il timer gira, ferma il timer
+            if (viewName !== 'practice' && appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+                appState.timerInterval = null;
+                appState.isRunning = false;
+            }
+
+            // Nascondi tutte le sezioni
+            ['setup', 'practice', 'results', 'report'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+            });
+
+            // Mostra la sezione richiesta
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+            // Aggiorna stili pulsanti navbar
+            const btnPractice = document.getElementById('nav-btn-practice');
+            const btnReport = document.getElementById('nav-btn-report');
+
+            if (viewName === 'report') {
+                btnReport.className = 'px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 bg-indigo-50 text-indigo-700 relative';
+                btnPractice.className = 'px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 text-slate-600 hover:bg-slate-100';
+                renderReportTable();
+            } else {
+                btnPractice.className = 'px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 bg-indigo-50 text-indigo-700';
+                btnReport.className = 'px-3.5 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 text-slate-600 hover:bg-slate-100 relative';
+            }
+        }
+
+        function showToast(message, icon = 'ℹ️') {
+            const box = document.getElementById('toast-box');
+            document.getElementById('toast-message').textContent = message;
+            document.getElementById('toast-icon').textContent = icon;
+            
+            box.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                box.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // -------------------------------------------------------------------------
+        // 5. CONFIGURAZIONE STUDENTE, LIVELLO E TIMER
+        // -------------------------------------------------------------------------
+        function updateStudentState() {
+            const nameVal = document.getElementById('student-name').value.trim();
+            const classVal = document.getElementById('student-class').value.trim().toUpperCase();
+            
+            appState.studentName = nameVal;
+            appState.studentClass = classVal || 'N.D.';
+
+            const badge = document.getElementById('header-student-badge');
+            if (nameVal.length > 0) {
+                document.getElementById('name-error-msg').classList.add('hidden');
+                badge.classList.remove('hidden');
+                document.getElementById('badge-student-name').textContent = classVal ? `${nameVal} (${classVal})` : nameVal;
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function selectQuickClass(cls) {
+            document.getElementById('student-class').value = cls;
+            document.querySelectorAll('.quick-class-btn').forEach(btn => {
+                if (btn.textContent === cls) {
+                    btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                    btn.classList.remove('text-slate-600', 'border-slate-200');
+                } else {
+                    btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                    btn.classList.add('text-slate-600', 'border-slate-200');
+                }
+            });
+            updateStudentState();
+        }
+
+        function selectLevel(level) {
+            appState.selectedLevel = level;
+            document.querySelectorAll('.level-card').forEach(card => {
+                const cardLvl = parseInt(card.getAttribute('data-level'));
+                const check = card.querySelector('.level-check');
+                if (cardLvl === level) {
+                    card.classList.add('border-indigo-600', 'bg-indigo-50/50');
+                    card.classList.remove('border-slate-200');
+                    check.classList.remove('hidden');
+                } else {
+                    card.classList.remove('border-indigo-600', 'bg-indigo-50/50');
+                    card.classList.add('border-slate-200');
+                    check.classList.add('hidden');
+                }
+            });
+        }
+
+        function selectTimer(seconds) {
+            appState.selectedDuration = seconds;
+            document.querySelectorAll('.timer-btn').forEach(btn => {
+                const btnTime = parseInt(btn.getAttribute('data-time'));
+                const title = btn.querySelector('div:first-child');
+                if (btnTime === seconds) {
+                    btn.classList.add('border-indigo-600', 'bg-indigo-50/70');
+                    btn.classList.remove('border-slate-200');
+                    title.classList.add('text-indigo-900');
+                } else {
+                    btn.classList.remove('border-indigo-600', 'bg-indigo-50/70');
+                    btn.classList.add('border-slate-200');
+                    title.classList.remove('text-indigo-900');
+                }
+            });
+        }
+
+        // -------------------------------------------------------------------------
+        // 6. MOTORE DELL'ESERCIZIO DI DIGITAZIONE
+        // -------------------------------------------------------------------------
+        function generateTextForLevel(level, duration) {
+            const pool = EXERCISE_TEXTS[level];
+            // Se il timer è lungo (es. 2-3 minuti), concateniamo più frasi casuali per non finire subito il testo
+            const targetLength = duration === 0 ? 140 : Math.max(120, duration * 4);
+            let combined = [];
+            let lastIdx = -1;
+
+            while (combined.join(' ').length < targetLength) {
+                let idx = Math.floor(Math.random() * pool.length);
+                if (idx === lastIdx && pool.length > 1) {
+                    idx = (idx + 1) % pool.length;
+                }
+                lastIdx = idx;
+                combined.push(pool[idx]);
+            }
+            return combined.join(' ');
+        }
+
+        function startExercise() {
+            updateStudentState();
+            if (!appState.studentName) {
+                document.getElementById('name-error-msg').classList.remove('hidden');
+                document.getElementById('student-name').focus();
+                showToast('Inserisci Nome e Cognome per iniziare!', '⚠️');
+                return;
+            }
+
+            // Prepara stato esercizio
+            appState.targetText = generateTextForLevel(appState.selectedLevel, appState.selectedDuration);
+            appState.charStates = new Array(appState.targetText.length).fill('pending');
+            appState.currentIndex = 0;
+            appState.totalKeystrokes = 0;
+            appState.errorCount = 0;
+            appState.missedKeysMap = {};
+            appState.hasStartedTyping = false;
+            appState.isRunning = true;
+            appState.elapsedSeconds = 0;
+            appState.timeRemaining = appState.selectedDuration;
+
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+                appState.timerInterval = null;
+            }
+
+            // Aggiorna UI intestazione pratica
+            document.getElementById('practice-level-label').textContent = LEVEL_NAMES[appState.selectedLevel];
+            document.getElementById('practice-student-label').textContent = `${appState.studentName} (${appState.studentClass})`;
+            document.getElementById('start-prompt-banner').classList.remove('hidden');
+            
+            // Reset indicatori live
+            document.getElementById('live-wpm').textContent = '0';
+            document.getElementById('live-accuracy').textContent = '100';
+            document.getElementById('live-errors').textContent = '0';
+            document.getElementById('progress-bar').style.width = '0%';
+            updateTimerDisplay();
+
+            // Renderizza testo e tastiera
+            renderTargetText();
+            highlightNextKeyOnKeyboard();
+
+            // Passa alla vista pratica e dai focus all'input
+            switchView('practice');
+            focusHiddenInput();
+        }
+
+        function restartCurrentExercise() {
+            startExercise();
+        }
+
+        function abortExercise() {
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+                appState.timerInterval = null;
+            }
+            appState.isRunning = false;
+            switchView('setup');
+        }
+
+        function focusHiddenInput() {
+            const input = document.getElementById('hidden-typing-input');
+            input.value = '';
+            input.focus();
+        }
+
+        function startTimerLoop() {
+            appState.startTime = Date.now();
+            document.getElementById('start-prompt-banner').classList.add('hidden');
+
+            appState.timerInterval = setInterval(() => {
+                appState.elapsedSeconds = Math.floor((Date.now() - appState.startTime) / 1000);
+
+                if (appState.selectedDuration > 0) {
+                    appState.timeRemaining = Math.max(0, appState.selectedDuration - appState.elapsedSeconds);
+                    updateTimerDisplay();
+                    updateLiveStats();
+
+                    if (appState.timeRemaining <= 0) {
+                        finishExercise(false);
+                    }
+                } else {
+                    // Modalità senza tempo: mostra tempo trascorso
+                    updateTimerDisplay();
+                    updateLiveStats();
+                }
+            }, 250);
+        }
+
+        function updateTimerDisplay() {
+            const el = document.getElementById('live-timer');
+            const secToShow = appState.selectedDuration > 0 ? appState.timeRemaining : appState.elapsedSeconds;
+            const mins = Math.floor(secToShow / 60).toString().padStart(2, '0');
+            const secs = (secToShow % 60).toString().padStart(2, '0');
+            el.textContent = `${mins}:${secs}`;
+
+            if (appState.selectedDuration > 0 && appState.timeRemaining <= 10 && appState.hasStartedTyping) {
+                el.classList.add('text-rose-400');
+            } else {
+                el.classList.remove('text-rose-400');
+            }
+        }
+
+        function handleSpecialKeys(e) {
+            if (!appState.isRunning) return;
+            // Gestione Backspace per correggere un carattere precedente
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                if (appState.currentIndex > 0) {
+                    appState.currentIndex--;
+                    appState.charStates[appState.currentIndex] = 'pending';
+                    renderTargetText();
+                    highlightNextKeyOnKeyboard();
+                    updateProgressBar();
+                }
+            }
+        }
+
+        function handleTypingInput(e) {
+            if (!appState.isRunning) return;
+
+            const input = e.target;
+            const typedValue = input.value;
+            input.value = ''; // Svuota subito per leggere un carattere alla volta
+
+            if (!typedValue) return;
+
+            // Avvia timer al primo carattere
+            if (!appState.hasStartedTyping) {
+                appState.hasStartedTyping = true;
+                startTimerLoop();
+            }
+
+            // Processa ogni carattere inserito
+            for (let i = 0; i < typedValue.length; i++) {
+                if (appState.currentIndex >= appState.targetText.length) break;
+
+                const typedChar = typedValue[i];
+                const expectedChar = appState.targetText[appState.currentIndex];
+
+                appState.totalKeystrokes++;
+
+                if (typedChar === expectedChar) {
+                    appState.charStates[appState.currentIndex] = 'correct';
+                    flashKeyFeedback(typedChar, true);
+                } else {
+                    appState.charStates[appState.currentIndex] = 'incorrect';
+                    appState.errorCount++;
+                    
+                    // Registra il tasto sbagliato per l'analisi del docente
+                    const keyLabel = expectedChar === ' ' ? 'Spazio' : expectedChar;
+                    appState.missedKeysMap[keyLabel] = (appState.missedKeysMap[keyLabel] || 0) + 1;
+                    
+                    flashKeyFeedback(typedChar, false);
+                }
+
+                appState.currentIndex++;
+            }
+
+            renderTargetText();
+            highlightNextKeyOnKeyboard();
+            updateLiveStats();
+            updateProgressBar();
+
+            // Controlla se l'intero testo è stato completato
+            if (appState.currentIndex >= appState.targetText.length) {
+                finishExercise(false);
+            }
+        }
+
+        function renderTargetText() {
+            const container = document.getElementById('target-text-display');
+            let html = '';
+
+            for (let i = 0; i < appState.targetText.length; i++) {
+                const char = appState.targetText[i];
+                const state = appState.charStates[i];
+                const isCurrent = (i === appState.currentIndex);
+
+                // Rendi visibile lo spazio se sbagliato o corrente
+                let displayChar = char === ' ' ? '&nbsp;' : escapeHtml(char);
+
+                if (state === 'correct') {
+                    html += `<span class="text-emerald-600 bg-emerald-50/70 rounded-xs">${displayChar}</span>`;
+                } else if (state === 'incorrect') {
+                    const errChar = char === ' ' ? '␣' : escapeHtml(char);
+                    html += `<span class="text-rose-700 bg-rose-200/90 underline decoration-rose-500 decoration-2 rounded-xs font-bold">${errChar}</span>`;
+                } else if (isCurrent) {
+                    html += `<span class="relative bg-indigo-100 text-indigo-950 font-bold rounded-xs px-0.5 border-b-2 border-indigo-600">${displayChar}<span class="cursor-caret absolute -left-[1px] top-0 bottom-0 w-[2px] bg-indigo-600"></span></span>`;
+                } else {
+                    html += `<span class="text-slate-400">${displayChar}</span>`;
+                }
+            }
+
+            container.innerHTML = html;
+        }
+
+        function updateProgressBar() {
+            const pct = Math.min(100, Math.round((appState.currentIndex / appState.targetText.length) * 100));
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+        }
+
+        function calculateMetrics() {
+            const elapsedSec = Math.max(1, appState.hasStartedTyping ? ((Date.now() - appState.startTime) / 1000) : 1);
+            const minutes = elapsedSec / 60;
+
+            // Caratteri corretti attuali
+            const correctChars = appState.charStates.filter(s => s === 'correct').length;
+
+            // Standard dattilografia: 1 parola = 5 caratteri
+            const wpm = Math.round((correctChars / 5) / minutes);
+            const cpm = Math.round(correctChars / minutes);
+
+            const accuracy = appState.totalKeystrokes > 0
+                ? Math.max(0, Math.round(((appState.totalKeystrokes - appState.errorCount) / appState.totalKeystrokes) * 100))
+                : 100;
+
+            return { wpm, cpm, accuracy, correctChars, elapsedSec: Math.round(elapsedSec) };
+        }
+
+        function updateLiveStats() {
+            const { wpm, accuracy } = calculateMetrics();
+            document.getElementById('live-wpm').textContent = wpm;
+            document.getElementById('live-accuracy').textContent = accuracy;
+            document.getElementById('live-errors').textContent = appState.errorCount;
+        }
+
+        // -------------------------------------------------------------------------
+        // 7. TASTIERA VIRTUALE INTERATTIVA
+        // -------------------------------------------------------------------------
+        function renderKeyboard() {
+            const kbContainer = document.getElementById('virtual-keyboard');
+            const showFingerColors = document.getElementById('toggle-finger-colors').checked;
+            document.getElementById('finger-legend').classList.toggle('hidden', !showFingerColors);
+
+            let html = '';
+
+            ITALIAN_KEYBOARD_ROWS.forEach(row => {
+                html += `<div class="flex items-center justify-center gap-1 sm:gap-1.5">`;
+                row.forEach(k => {
+                    const widthClass = k.width || 'w-8 sm:w-11';
+                    const colorClass = showFingerColors
+                        ? FINGER_BG_CLASSES[k.finger]
+                        : 'bg-white border-slate-300 text-slate-800';
+
+                    const dataKeyAttr = escapeHtml(k.key.toLowerCase());
+                    const dataShiftAttr = k.shift ? escapeHtml(k.shift) : '';
+
+                    if (k.label) {
+                        // Tasto speciale (Spazio, Shift, Enter, Backspace)
+                        html += `
+                            <div data-vkey="${dataKeyAttr}" class="key-cap ${widthClass} h-9 sm:h-11 rounded-lg border ${colorClass} flex items-center justify-center text-[10px] sm:text-xs font-bold tracking-tight">
+                                ${k.label}
+                            </div>
+                        `;
+                    } else {
+                        // Tasto carattere con eventuale carattere Shift in alto
+                        const homeDot = k.home ? `<span class="w-2.5 h-0.5 bg-indigo-600 rounded-full mt-0.5"></span>` : '';
+                        html += `
+                            <div data-vkey="${dataKeyAttr}" data-vshift="${dataShiftAttr}" class="key-cap ${widthClass} h-9 sm:h-11 rounded-lg border ${colorClass} flex flex-col items-center justify-center relative">
+                                <span class="text-[9px] sm:text-[10px] opacity-60 leading-none self-start pl-1.5">${k.shift || ''}</span>
+                                <span class="text-xs sm:text-sm font-bold leading-none uppercase">${k.key}</span>
+                                ${homeDot}
+                            </div>
+                        `;
+                    }
+                });
+                html += `</div>`;
+            });
+
+            kbContainer.innerHTML = html;
+            if (appState.isRunning) {
+                highlightNextKeyOnKeyboard();
+            }
+        }
+
+        function highlightNextKeyOnKeyboard() {
+            // Rimuovi evidenziazioni precedenti
+            document.querySelectorAll('.key-target').forEach(el => el.classList.remove('key-target'));
+
+            const hintBadge = document.getElementById('next-key-hint');
+            if (appState.currentIndex >= appState.targetText.length) {
+                hintBadge.textContent = 'Completato!';
+                return;
+            }
+
+            const nextChar = appState.targetText[appState.currentIndex];
+            hintBadge.textContent = nextChar === ' ' ? 'Prossimo tasto: SPAZIO' : `Prossimo tasto: "${nextChar}"`;
+
+            // Cerca il tasto corrispondente (normale o con Shift)
+            const keys = document.querySelectorAll('[data-vkey]');
+            let needsShift = false;
+
+            keys.forEach(el => {
+                const vkey = el.getAttribute('data-vkey');
+                const vshift = el.getAttribute('data-vshift');
+
+                if (nextChar === ' ' && vkey === ' ') {
+                    el.classList.add('key-target');
+                } else if (nextChar === vkey) {
+                    el.classList.add('key-target');
+                } else if (vshift && nextChar === vshift) {
+                    el.classList.add('key-target');
+                    needsShift = true;
+                }
+            });
+
+            // Se serve la maiuscola o un simbolo superiore, illumina anche il tasto Maiusc (Shift)
+            if (needsShift) {
+                document.querySelectorAll('[data-vkey="shiftleft"], [data-vkey="shiftright"]').forEach(el => {
+                    el.classList.add('key-target');
+                });
+            }
+        }
+
+        function flashKeyFeedback(char, isCorrect) {
+            const lower = char.toLowerCase();
+            const keys = document.querySelectorAll('[data-vkey]');
+            keys.forEach(el => {
+                const vkey = el.getAttribute('data-vkey');
+                const vshift = el.getAttribute('data-vshift');
+                if (vkey === lower || vshift === char) {
+                    if (!isCorrect) {
+                        el.classList.add('key-error-flash');
+                        setTimeout(() => el.classList.remove('key-error-flash'), 220);
+                    } else {
+                        el.classList.add('key-pressed');
+                        setTimeout(() => el.classList.remove('key-pressed'), 120);
+                    }
+                }
+            });
+        }
+
+        // -------------------------------------------------------------------------
+        // 8. CONCLUSIONE ESERCIZIO, VALUTAZIONE E SALVATAGGIO REPORT DOCENTE
+        // -------------------------------------------------------------------------
+        function evaluatePerformance(wpm, accuracy) {
+            if (accuracy < 80) {
+                return { label: 'Da consolidare', stars: '⭐', color: 'bg-amber-100 text-amber-800', msg: 'Rallenta un po\' il ritmo e concentrati sulla precisione: meglio scrivere piano senza errori!' };
+            }
+            if (wpm >= 35 && accuracy >= 95) {
+                return { label: 'Esperto', stars: '⭐⭐⭐🏆', color: 'bg-purple-100 text-purple-800', msg: 'Prestazione eccellente! Hai una padronanza della tastiera da vero professionista.' };
+            }
+            if (wpm >= 22 && accuracy >= 90) {
+                return { label: 'Buono', stars: '⭐⭐⭐', color: 'bg-emerald-100 text-emerald-800', msg: 'Ottimo risultato! Velocità e precisione sono ben bilanciate.' };
+            }
+            if (wpm >= 12 && accuracy >= 85) {
+                return { label: 'In progresso', stars: '⭐⭐', color: 'bg-sky-100 text-sky-800', msg: 'Stai facendo ottimi progressi! Continua ad esercitarti per aumentare la fluidità.' };
+            }
+            return { label: 'Principiante', stars: '⭐', color: 'bg-slate-100 text-slate-800', msg: 'Buon inizio! Ogni grande dattilografo parte da qui. Ripeti l\'esercizio per migliorare.' };
+        }
+
+        function finishExercise(manualStop) {
+            if (!appState.isRunning) return;
+            appState.isRunning = false;
+
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+                appState.timerInterval = null;
+            }
+
+            const { wpm, cpm, accuracy } = calculateMetrics();
+            const evaluation = evaluatePerformance(wpm, accuracy);
+
+            // Ordina i tasti più sbagliati
+            const sortedMissed = Object.entries(appState.missedKeysMap)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            // Popola schermata risultati studente
+            document.getElementById('result-stars').textContent = evaluation.stars;
+            const rankBadge = document.getElementById('result-badge-rank');
+            rankBadge.textContent = `Livello Raggiunto: ${evaluation.label}`;
+            rankBadge.className = `px-4 py-1 rounded-full font-bold text-sm ${evaluation.color}`;
+
+            document.getElementById('result-student-title').textContent = `Ottimo lavoro, ${appState.studentName}!`;
+            document.getElementById('result-feedback-text').textContent = evaluation.msg;
+
+            document.getElementById('res-wpm').textContent = wpm;
+            document.getElementById('res-cpm').textContent = cpm;
+            document.getElementById('res-accuracy').textContent = `${accuracy}%`;
+            document.getElementById('res-errors').textContent = appState.errorCount;
+            document.getElementById('res-total-chars').textContent = appState.totalKeystrokes;
+
+            // Mostra eventuali tasti critici
+            const missedBox = document.getElementById('res-missed-keys-box');
+            const missedList = document.getElementById('res-missed-keys-list');
+            if (sortedMissed.length > 0) {
+                missedBox.classList.remove('hidden');
+                missedList.innerHTML = sortedMissed.map(([k, count]) => `
+                    <span class="px-2.5 py-1 rounded-lg bg-white border border-amber-300 font-mono text-xs font-bold text-amber-900">
+                        "${escapeHtml(k)}" <span class="text-rose-600">(${count}x)</span>
+                    </span>
+                `).join('');
+            } else {
+                missedBox.classList.add('hidden');
+            }
+
+            // Salva nel Report Docente solo se ha digitato almeno 5 caratteri
+            if (appState.totalKeystrokes >= 5) {
+                saveReportRecord({
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+                    date: new Date().toLocaleDateString('it-IT'),
+                    studentName: appState.studentName,
+                    studentClass: appState.studentClass,
+                    level: LEVEL_NAMES[appState.selectedLevel],
+                    timerLabel: appState.selectedDuration === 0 ? 'Libero' : `${appState.selectedDuration}s`,
+                    wpm,
+                    cpm,
+                    accuracy,
+                    errors: appState.errorCount,
+                    totalChars: appState.totalKeystrokes,
+                    missedKeys: sortedMissed.map(([k, c]) => `${k}(${c})`).join(', ') || 'Nessuno',
+                    evaluation: evaluation.label,
+                    evalColor: evaluation.color
+                });
+                showToast('Risultato salvato nel Report Docente!', '✅');
+            } else if (manualStop) {
+                showToast('Esercizio troppo breve per essere salvato nel report.', 'ℹ️');
+            }
+
+            switchView('results');
+        }
+
+        // -------------------------------------------------------------------------
+        // 9. GESTIONE STORAGE, TABELLA REPORT DOCENTE ED ESPORTAZIONE CSV
+        // -------------------------------------------------------------------------
+        function getStoredReports() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveReportRecord(record) {
+            const reports = getStoredReports();
+            reports.unshift(record); // Più recente in alto
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+            updateReportBadgeCount();
+        }
+
+        function deleteSingleReport(id) {
+            const reports = getStoredReports().filter(r => r.id !== id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+            updateReportBadgeCount();
+            renderReportTable();
+            showToast('Riga eliminata dal registro.', '🗑️');
+        }
+
+        function updateReportBadgeCount() {
+            const count = getStoredReports().length;
+            document.getElementById('report-count-badge').textContent = count;
+        }
+
+        function renderReportTable() {
+            const allReports = getStoredReports();
+            const tbody = document.getElementById('report-table-body');
+            const emptyState = document.getElementById('report-empty-state');
+            const classSelect = document.getElementById('filter-class-select');
+
+            // Popola opzioni filtro classe dinamicamente
+            const currentFilter = classSelect.value;
+            const classes = [...new Set(allReports.map(r => r.studentClass))].sort();
+            classSelect.innerHTML = `<option value="ALL">Tutte le classi (${allReports.length})</option>` +
+                classes.map(c => `<option value="${escapeHtml(c)}" ${c === currentFilter ? 'selected' : ''}>Classe ${escapeHtml(c)}</option>`).join('');
+
+            const filtered = currentFilter === 'ALL'
+                ? allReports
+                : allReports.filter(r => r.studentClass === currentFilter);
+
+            // Calcola statistiche aggregate
+            document.getElementById('stat-total-tests').textContent = filtered.length;
+            if (filtered.length > 0) {
+                const avgWpm = Math.round(filtered.reduce((acc, r) => acc + r.wpm, 0) / filtered.length);
+                const avgAcc = Math.round(filtered.reduce((acc, r) => acc + r.accuracy, 0) / filtered.length);
+                document.getElementById('stat-avg-wpm').textContent = avgWpm;
+                document.getElementById('stat-avg-acc').textContent = avgAcc;
+
+                // Aggrega tasti critici della classe
+                const globalMissed = {};
+                filtered.forEach(r => {
+                    if (r.missedKeys && r.missedKeys !== 'Nessuno') {
+                        r.missedKeys.split(', ').forEach(item => {
+                            const match = item.match(/^(.+)\((\d+)\)$/);
+                            if (match) {
+                                globalMissed[match[1]] = (globalMissed[match[1]] || 0) + parseInt(match[2]);
+                            }
+                        });
+                    }
+                });
+                const topHard = Object.entries(globalMissed).sort((a, b) => b[1] - a[1]).slice(0, 4);
+                document.getElementById('stat-hardest-keys').textContent = topHard.length > 0
+                    ? topHard.map(([k, c]) => `"${k}" (${c})`).join(' • ')
+                    : 'Ottima precisione!';
+            } else {
+                document.getElementById('stat-avg-wpm').textContent = '0';
+                document.getElementById('stat-avg-acc').textContent = '0';
+                document.getElementById('stat-hardest-keys').textContent = 'Nessun dato';
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            tbody.innerHTML = filtered.map(r => `
+                <tr class="hover:bg-slate-50/90 transition">
+                    <td class="py-3 px-4">
+                        <div class="font-bold text-slate-900">${escapeHtml(r.studentName)}</div>
+                        <div class="text-[11px] text-slate-400">${r.date} • ore ${r.timestamp}</div>
+                    </td>
+                    <td class="py-3 px-3">
+                        <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-xs">${escapeHtml(r.studentClass)}</span>
+                    </td>
+                    <td class="py-3 px-3 text-xs font-medium text-slate-700">${escapeHtml(r.level)}</td>
+                    <td class="py-3 px-3 text-xs font-mono text-slate-600">${escapeHtml(r.timerLabel)}</td>
+                    <td class="py-3 px-3 text-right font-mono font-extrabold text-indigo-600">${r.wpm}</td>
+                    <td class="py-3 px-3 text-right font-mono text-slate-700">${r.cpm}</td>
+                    <td class="py-3 px-3 text-right font-mono font-bold ${r.accuracy >= 90 ? 'text-emerald-600' : 'text-amber-600'}">${r.accuracy}%</td>
+                    <td class="py-3 px-3 text-center font-mono text-rose-600 font-semibold">${r.errors}</td>
+                    <td class="py-3 px-3 text-xs font-mono text-slate-500 max-w-[140px] truncate" title="${escapeHtml(r.missedKeys)}">${escapeHtml(r.missedKeys)}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold ${r.evalColor || 'bg-slate-100 text-slate-700'}">
+                            ${escapeHtml(r.evaluation)}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-center no-print">
+                        <button onclick="deleteSingleReport(${r.id})" class="text-slate-400 hover:text-rose-600 p-1 rounded transition" title="Elimina riga">
+                            ✕
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function exportReportCSV() {
+            const reports = getStoredReports();
+            if (reports.length === 0) {
+                showToast('Nessun dato da esportare.', '⚠️');
+                return;
+            }
+
+            // Intestazione CSV con punto e virgola (standard Excel Italia)
+            const headers = [
+                'Data', 'Ora', 'Studente', 'Classe', 'Livello', 'Timer',
+                'WPM (Parole/min)', 'CPM (Battute/min)', 'Precisione (%)',
+                'Errori', 'Tasti Errati', 'Valutazione'
+            ];
+
+            const rows = reports.map(r => [
+                r.date,
+                r.timestamp,
+                `"${r.studentName.replace(/"/g, '""')}"`,
+                `"${r.studentClass.replace(/"/g, '""')}"`,
+                `"${r.level}"`,
+                r.timerLabel,
+                r.wpm,
+                r.cpm,
+                r.accuracy,
+                r.errors,
+                `"${r.missedKeys.replace(/"/g, '""')}"`,
+                `"${r.evaluation}"`
+            ]);
+
+            // Aggiungi BOM UTF-8 per aprire correttamente le lettere accentate in Excel
+            const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Report_DattiLab_Classe_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('File CSV scaricato con successo!', '📥');
+        }
+
+        // Gestione Modale Svuota Registro
+        function openClearConfirmModal() {
+            if (getStoredReports().length === 0) {
+                showToast('Il registro è già vuoto.', 'ℹ️');
+                return;
+            }
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function confirmClearAllReports() {
+            localStorage.removeItem(STORAGE_KEY);
+            updateReportBadgeCount();
+            renderReportTable();
+            closeConfirmModal();
+            showToast('Registro svuotato completamente.', '🗑️');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
